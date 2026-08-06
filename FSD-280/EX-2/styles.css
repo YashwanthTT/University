@@ -1,0 +1,145 @@
+/* ==========================================================================
+   Base & Reset Styles (Mobile First)
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a1a;
+    padding: 1rem 1.5rem;
+    color: #fff;
+}
+
+.nav-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 1.5rem;
+}
+
+.nav-links a {
+    color: #ccc;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: #f39c12;
+}
+
+/* Main Container Layout (Mobile Default: Stacked Rows) */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Column Cards Styling */
+.col {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.col h2 {
+    margin-bottom: 1rem;
+    color: #1a1a1a;
+    border-bottom: 2px solid #f39c12;
+    padding-bottom: 0.5rem;
+}
+
+/* Cards within columns */
+.facts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fact-card {
+    background-color: #f9f9fc;
+    border-left: 4px solid #f39c12;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+}
+
+.fact-card.highlight {
+    margin-top: 1rem;
+    border-left-color: #e67e22;
+    background-color: #fff8f0;
+}
+
+.fact-card h3 {
+    font-size: 1rem;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+}
+
+/* Image styling */
+.col-middle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    overflow: hidden;
+}
+
+.img-link {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.clickable-image {
+    width: 100%;
+    height: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.clickable-image:hover {
+    transform: scale(1.02);
+}
+
+@media (min-width: 768px) {
+    .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; 
+        align-items: start;
+    }
+
+    .col-middle {
+        align-self: stretch;
+    }
+
+    .clickable-image {
+        max-height: 100%;
+    }
+}
