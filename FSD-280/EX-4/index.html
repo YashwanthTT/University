@@ -2,35 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>DOM Manipulation Experiment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DOM Manipulation Experiment - User Registration with validation">
+    <title>Registration | DOM Manipulation</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>Registration ]</h2>
+<main class="container">
+    <header class="header">
+        <h1>Registration</h1>
+        <p class="subtitle">Create a new user account</p>
+    </header>
 
-    <form id="myForm">
-        <label>Name</label>
-        <input type="text" id="name" placeholder="Enter Name">
+    <form id="myForm" novalidate>
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="e.g. John Doe" autocomplete="name" maxlength="50" aria-describedby="nameError">
+            <small class="error-msg" id="nameError"></small>
+        </div>
 
-        <label>Password</label>
-        <input type="password" id="password" placeholder="Enter Password">
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Min. 6 characters" autocomplete="new-password" aria-describedby="passwordError">
+            <small class="error-msg" id="passwordError"></small>
+        </div>
 
-        <label>Confirm Password</label>
-        <input type="password" id="confirmPassword" placeholder="Confirm Password">
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Re-enter password" autocomplete="new-password" aria-describedby="confirmError">
+            <small class="error-msg" id="confirmError"></small>
+        </div>
 
-        <label>Phone Number</label>
-        <input type="text" id="phone" placeholder="Enter 10-digit Phone Number">
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="10-digit number" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" autocomplete="tel" aria-describedby="phoneError">
+            <small class="error-msg" id="phoneError"></small>
+        </div>
 
-        <button type="submit">Add Item</button>
+        <button type="submit" class="btn-primary">Register User</button>
     </form>
 
-    <h2>Registered Users</h2>
-
-    <ul id="userList"></ul>
-
-</div>
+    <section class="list-section" aria-labelledby="listHeading">
+        <div class="list-header">
+            <h2 id="listHeading">Registered Users</h2>
+            <span id="userCount" class="badge">0 users</span>
+        </div>
+        <ul id="userList"></ul>
+        <p id="emptyState" class="empty-state">No users registered yet. Add one above!</p>
+    </section>
+</main>
 
 <script src="main.js"></script>
 </body>
