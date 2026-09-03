@@ -5,8 +5,7 @@ function App() {
   return (
     <div>
       <h1>Welcome to Full Stack Lab</h1>
-      <StudentCard name="Rohit Kumar" dept="CSE" />
-      <StudentCard name="Ananya Sharma" dept="ISE" />
+      <StudentCard name="Yashwanth" dept="CSE" />
     </div>
   );
 }
