@@ -4,33 +4,31 @@ import './App.css'
 
 function App() {
   return (
-    <>
-      <section id="center" style={{ padding: '32px 20px' }}>
-        <h1>React State Management</h1>
-        <p>
-          Demonstrating <code>useState</code> & event handling
-        </p>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section style={sectionStyle}>
+    <section style={sectionStyle}>
+      <div style={innerStyle}>
         <Counter />
         <TodoList />
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      </div>
+    </section>
   )
 }
 
 const sectionStyle: React.CSSProperties = {
   display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '100svh',
+  padding: '32px',
+  boxSizing: 'border-box',
+  width: '100%',
+}
+
+const innerStyle: React.CSSProperties = {
+  display: 'flex',
   flexDirection: 'column',
   gap: '24px',
-  padding: '32px',
-  textAlign: 'center',
+  width: '100%',
+  maxWidth: '520px',
 }
 
 export default App
