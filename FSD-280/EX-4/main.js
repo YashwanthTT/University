@@ -42,9 +42,14 @@ const updateEmptyState = () => {
 const validators = {
     name: (value) => {
         if (!value) return "Name is required.";
-        if (value.length < 4) return "Name must be at least 4 characters.";
-        if (!/^[A-Z]/.test(value)) return "First letter must be uppercase (A-Z).";
+        // raw charset first - gives precise error instead of "too short" masking invalid chars
         if (!/^[A-Za-z ]+$/.test(value)) return "Name can only contain letters and spaces.";
+        if (/\s{2,}/.test(value)) return "Name cannot contain consecutive spaces.";
+        if (!/^[A-Z]/.test(value)) return "First letter must be uppercase (A-Z).";
+        // optional stricter: each word should start uppercase (uncomment if required)
+        // if (!/^[A-Z][a-z]*(\s[A-Z][a-z]*)*$/.test(value)) return "Each word must start with uppercase.";
+        if (value.length < 4) return "Name must be at least 4 characters.";
+        if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(value)) return "Name can only contain letters and single spaces between words.";
         return "";
     },
     password: (value) => {
@@ -84,13 +89,52 @@ const validateAll = () => {
     return isValid ? values : null;
 };
 
-// live clear on input + phone digit filtering
-Object.keys(fields).forEach((key) => {
-    fields[key].addEventListener("input", () => clearError(key));
+// live validation on input + phone digit filtering
+const getValues = () => ({
+    name: fields.name.value.trim(),
+    password: fields.password.value,
+    confirmPassword: fields.confirmPassword.value,
+    phone: fields.phone.value.trim(),
+});
+
+const validateField = (key) => {
+    const values = getValues();
+    const msg = validators[key](values[key], values);
+    if (msg) setError(key, msg);
+    else clearError(key);
+};
+
+fields.name.addEventListener("input", (e) => {
+    // normalize spaces: no leading space, collapse consecutive spaces
+    // do NOT strip digits/symbols here - let validator show "only letters and spaces"
+    const pos = e.target.selectionStart;
+    const before = e.target.value;
+    const after = before.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+    if (before !== after) {
+        e.target.value = after;
+        const diff = before.length - after.length;
+        try { e.target.setSelectionRange(Math.max(0, pos - diff), Math.max(0, pos - diff)); } catch {}
+    }
 });
 
 fields.phone.addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+});
+
+Object.keys(fields).forEach((key) => {
+    fields[key].addEventListener("input", () => {
+        // sanitized value already handled for phone above, now validate
+        validateField(key);
+        // re-validate confirmPassword when password changes (and vice versa)
+        if (key === "password" && fields.confirmPassword.value) {
+            validateField("confirmPassword");
+        }
+    });
+});
+
+// also validate on blur for immediate feedback if user tabs through
+Object.keys(fields).forEach((key) => {
+    fields[key].addEventListener("blur", () => validateField(key));
 });
 
 // --- user creation ---
