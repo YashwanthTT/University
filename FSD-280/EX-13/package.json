@@ -1,0 +1,17 @@
+{
+  "name": "mongoose_lab",
+  "version": "1.0.0",
+  "description": "EX-13: MongoDB with Node.js using Mongoose",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^8.0.0"
+  }
+}
