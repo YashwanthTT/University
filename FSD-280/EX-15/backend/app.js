@@ -1,85 +1,123 @@
 require('dotenv').config();
+
+const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
 
 const app = express();
-app.use(express.json());
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }));
+const PORT = process.env.PORT || 5001;
+const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-mongoose
-  .connect(process.env.MONGO_URI || 'mongodb://localhost:27017/fsdDB')
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('Connection error:', err.message));
+app.use(cors({ origin: frontendOrigin }));
+app.use(express.json({ limit: '1mb' }));
 
-// Reuses EX-13 Student schema + User model for JWT auth (Ex-14)
-const User = mongoose.model(
-  'User',
-  new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-  })
-);
-const Student = mongoose.model(
-  'Student',
-  new mongoose.Schema({
-    student_id: { type: Number, required: true, unique: true },
-    name: { type: String, required: true },
-    dept: { type: String, default: 'CSE' },
-    marks: { type: Number, min: 0, max: 100 }
-  })
+const documentSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    source: { type: String, required: true, maxlength: 500000 },
+  },
+  { timestamps: true }
 );
 
-const auth = (req, res, next) => {
-  const token = (req.headers.authorization || '').replace('Bearer ', '');
-  if (!token) return res.status(401).json({ message: 'No token' });
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET || 'fsd_secret_key');
-    next();
-  } catch {
-    res.status(401).json({ message: 'Invalid token' });
-  }
+documentSchema.index({ name: 1 }, { unique: true });
+const Document = mongoose.model('Document', documentSchema);
+
+const completions = [
+  { label: '#set page', insertText: '#set page(\n  paper: "a4",\n  margin: 2cm,\n)', detail: 'Page configuration' },
+  { label: '#set text', insertText: '#set text(font: "Libertinus Serif", size: 11pt)', detail: 'Text styling' },
+  { label: '#set par', insertText: '#set par(justify: true)', detail: 'Paragraph styling' },
+  { label: '#show', insertText: '#show ', detail: 'Show rule' },
+  { label: '#let', insertText: '#let name = ', detail: 'Define a function or value' },
+  { label: '#align', insertText: '#align(center)[\n  \n]', detail: 'Alignment block' },
+  { label: '#block', insertText: '#block[\n  \n]', detail: 'Block container' },
+  { label: '#table', insertText: '#table(\n  columns: 2,\n  [Header], [Value],\n)', detail: 'Table' },
+  { label: '#figure', insertText: '#figure(\n  image("image.png"),\n  caption: [Caption],\n)', detail: 'Figure' },
+  { label: '#pagebreak', insertText: '#pagebreak()', detail: 'Start a new page' },
+  { label: '#theorem', insertText: '#theorem[\n  \n]', detail: 'Theorem block' },
+  { label: '#proof', insertText: '#proof[\n  \n]', detail: 'Proof block' },
+  { label: '#quote', insertText: '#quote[\n  \n]', detail: 'Quote block' },
+  { label: '#bibliography', insertText: '#bibliography("references.bib")', detail: 'Bibliography' },
+  { label: 'heading', insertText: '= ', detail: 'Heading' },
+  { label: 'display math', insertText: '$\n  \n$', detail: 'Display equation' },
+];
+
+const validateDocument = (source) => {
+  const diagnostics = [];
+  const stack = [];
+  source.split('\n').forEach((line, index) => {
+    [...line].forEach((character) => {
+      if (character === '[') stack.push(index + 1);
+      if (character === ']' && !stack.pop()) {
+        diagnostics.push({ line: index + 1, severity: 'error', message: 'Unexpected closing bracket.' });
+      }
+    });
+  });
+  stack.forEach((line) => diagnostics.push({ line, severity: 'error', message: 'Unclosed content block.' }));
+  return diagnostics.slice(0, 20);
 };
 
-app.post('/register', async (req, res) => {
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, service: 'typster-api', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
+});
+
+app.get('/api/autocomplete', (req, res) => {
+  const query = String(req.query.q || '').toLowerCase();
+  res.json(completions.filter((item) => !query || item.label.toLowerCase().includes(query)).slice(0, 20));
+});
+
+app.post('/api/compile', (req, res) => {
+  const source = typeof req.body?.source === 'string' ? req.body.source : '';
+  if (!source) return res.status(400).json({ message: 'source is required' });
+  res.json({ ok: validateDocument(source).length === 0, diagnostics: validateDocument(source), source });
+});
+
+app.get('/api/documents', async (_req, res) => {
   try {
-    const { email, password } = req.body;
-    if (await User.findOne({ email })) return res.status(400).json({ message: 'User exists' });
-    await new User({ email, password: await bcrypt.hash(password, 10) }).save();
-    res.status(201).json({ message: 'Registered successfully' });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.json(await Document.find({}, 'name source createdAt updatedAt').sort({ updatedAt: -1 }).lean());
+  } catch (error) {
+    res.status(503).json({ message: 'Document storage is unavailable.', detail: error.message });
   }
 });
 
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.password)))
-    return res.status(400).json({ message: 'Invalid credentials' });
-  res.json({ token: jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fsd_secret_key', { expiresIn: '1h' }) });
-});
-
-app.get('/students', auth, async (req, res) => res.json(await Student.find()));
-app.post('/students', auth, async (req, res) => {
+app.get('/api/documents/:name', async (req, res) => {
   try {
-    res.status(201).json(await new Student(req.body).save());
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const document = await Document.findOne({ name: req.params.name }).lean();
+    if (!document) return res.status(404).json({ message: 'Document not found.' });
+    res.json(document);
+  } catch (error) {
+    res.status(503).json({ message: 'Document storage is unavailable.', detail: error.message });
   }
 });
-app.put('/students/:id', auth, async (req, res) => {
-  const s = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-  if (!s) return res.status(404).json({ message: 'Student not found' });
-  res.json(s);
-});
-app.delete('/students/:id', auth, async (req, res) => {
-  if (!(await Student.findByIdAndDelete(req.params.id))) return res.status(404).json({ message: 'Student not found' });
-  res.json({ message: 'Deleted successfully' });
+
+app.put('/api/documents/:name', async (req, res) => {
+  const source = typeof req.body?.source === 'string' ? req.body.source : null;
+  if (source === null) return res.status(400).json({ message: 'source is required' });
+  try {
+    const document = await Document.findOneAndUpdate(
+      { name: req.params.name },
+      { name: req.params.name, source },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json(document);
+  } catch (error) {
+    res.status(400).json({ message: 'Unable to save document.', detail: error.message });
+  }
 });
 
-const PORT = process.env.PORT || 5001; // 5000 taken by macOS AirPlay
-if (require.main === module) app.listen(PORT, () => console.log(`Backend on port ${PORT}`));
+app.delete('/api/documents/:name', async (req, res) => {
+  try {
+    const result = await Document.deleteOne({ name: req.params.name });
+    if (!result.deletedCount) return res.status(404).json({ message: 'Document not found.' });
+    res.status(204).end();
+  } catch (error) {
+    res.status(503).json({ message: 'Document storage is unavailable.', detail: error.message });
+  }
+});
+
+mongoose
+  .connect(process.env.MONGO_URI || 'mongodb://localhost:27017/typster')
+  .then(() => console.log('MongoDB connected'))
+  .catch((error) => console.error('MongoDB connection error:', error.message));
+
+if (require.main === module) app.listen(PORT, () => console.log(`Typster API listening on port ${PORT}`));
 module.exports = app;

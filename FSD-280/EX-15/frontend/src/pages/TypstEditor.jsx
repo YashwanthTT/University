@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
+import api from '../api';
 
 const starterDocument = `#set page(paper: "a4", margin: (x: 2.4cm, y: 2.2cm))
 #set text(font: "Libertinus Serif", size: 11pt)
@@ -256,6 +257,9 @@ export default function TypstEditor() {
 
   const saveDocument = () => {
     localStorage.setItem('typst-document', source);
+    api.put(`/documents/${encodeURIComponent(fileName)}`, { source }).catch((error) => {
+      console.error('Unable to sync document:', error.message);
+    });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
   };
@@ -336,17 +340,21 @@ export default function TypstEditor() {
   return (
     <main className="editor-app">
       <header className="topbar">
-        <div className="brand">
+        <div className="topbar-left">
+          <div className="brand">
           <div className="brand-mark">T</div>
           <span>Typst<span className="brand-muted">er</span></span>
           <span className="beta-pill">BETA</span>
+          </div>
+          <span className="topbar-divider" />
+          <div className="workspace-label"><span className="workspace-kicker">WORKSPACE</span><strong>Mathematics Research</strong></div>
         </div>
         <div className="topbar-actions">
-          <span className="saved-status">{saved ? 'Saved locally' : 'Unsaved changes'}</span>
-          <button className="icon-button" onClick={saveDocument} title="Save document">↧</button>
+          <span className={`save-indicator ${saved ? 'is-saved' : ''}`}><span />{saved ? 'Saved locally' : 'Unsaved changes'}</span>
+          <button className="icon-button" onClick={saveDocument} title="Save document" aria-label="Save document">⇩</button>
           <Link className="files-link" to="/files">All files</Link>
           <button className="export-button" onClick={exportPdf}>Export PDF</button>
-          <div className="avatar">Y</div>
+          <button className="avatar" aria-label="Account menu">Y</button>
         </div>
       </header>
 
@@ -354,7 +362,7 @@ export default function TypstEditor() {
         <section className="editor-pane">
           <div className="pane-toolbar">
             <div className="document-title"><input value={fileName} onChange={(event) => setFileName(event.target.value)} /><span className="edit-pencil">✎</span></div>
-            <div className="editor-tools"><span>UTF-8</span><span>Spaces: 2</span><button className="run-button">▶ Run</button></div>
+            <div className="editor-tools"><span>UTF-8</span><span>Spaces: 2</span></div>
           </div>
           <div className="code-area">
             <div className="line-numbers" ref={lineNumbersRef} aria-hidden="true">{Array.from({ length: lineCount }, (_, index) => <span key={index}>{index + 1}</span>)}</div>
@@ -368,14 +376,12 @@ export default function TypstEditor() {
               }}
             />
           </div>
-          <div className="statusbar"><span className="status-dot" /> <span>Compiled successfully</span><span className="status-spacer" /><span>Ln {lineCount}, Col 1</span><span>Typst</span></div>
         </section>
 
         <button className="resize-handle" aria-label="Resize editor and preview panels" onPointerDown={resizePanels}><span /></button>
         <section className="preview-pane">
           <div className="pane-toolbar preview-toolbar"><div className="preview-heading"><span className="preview-icon">◩</span> Preview <span className="page-count">· {pageCount} pages</span></div><div className="preview-tools"><button onClick={() => setZoom((value) => Math.max(70, value - 10))}>−</button><span>{zoom}%</span><button onClick={() => setZoom((value) => Math.min(130, value + 10))}>+</button><span className="toolbar-divider" /><button title="Fit to page" onClick={() => setZoom(100)}>Fit</button></div></div>
           <div className="preview-canvas"><div className="preview-stage"><div className="paper-zoom" style={{ zoom: zoom / 100 }}><div className="paper-stack" dangerouslySetInnerHTML={{ __html: preview }} /></div></div></div>
-          <div className="preview-status"><span className="status-dot" /> Preview is up to date <span>•</span> Updated just now</div>
         </section>
       </div>
     </main>

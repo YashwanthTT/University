@@ -1,10 +1,20 @@
-# EX-15: MERN Full Stack Integration (Student Management)
+# Typster: Typst editor with live preview
 
 ## Run locally
-Backend: `npm install && node app.js` in `backend/` (needs MongoDB on `MONGO_URI`; on macOS AirPlay uses port 5000, so use `PORT=5001 node app.js` if busy)
-Frontend: `npm install && npm run dev` in `frontend/` (Vite → http://localhost:5173)
-Flow: Register → Login (JWT saved to localStorage) → View Students → Add Student
+
+Backend: `npm install && npm start` in `backend/` (set `MONGO_URI` for document persistence).
+Frontend: `npm install && npm run dev` in `frontend/` (Vite → http://localhost:5173).
 
 ## Deploy
-Backend → Render: root `backend/`, start `node app.js`, set `MONGO_URI` (Atlas), `JWT_SECRET`, `FRONTEND_URL` (Vercel URL).
-Frontend → Vercel: root `frontend/`, set `VITE_API_URL` to the Render backend URL.
+
+Backend → Render: root `backend/`, start `npm start`, set `MONGO_URI` and `FRONTEND_URL`.
+Frontend → Vercel: root `frontend/`, set `VITE_API_URL` to the deployed backend API URL.
+
+## API
+
+- `GET /api/health` — deployment health check
+- `GET /api/autocomplete?q=%23set` — Typst completion suggestions
+- `POST /api/compile` with `{ "source": "..." }` — bracket diagnostics
+- `GET /api/documents` — list saved documents
+- `PUT /api/documents/:name` with `{ "source": "..." }` — save a document
+- `DELETE /api/documents/:name` — delete a document
