@@ -80,6 +80,6 @@ app.delete('/students/:id', auth, async (req, res) => {
   res.json({ message: 'Deleted successfully' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001; // 5000 taken by macOS AirPlay
 if (require.main === module) app.listen(PORT, () => console.log(`Backend on port ${PORT}`));
 module.exports = app;
