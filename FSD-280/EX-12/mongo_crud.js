@@ -1,23 +1,31 @@
-// EX-12: MongoDB CRUD — run: mongosh --file mongo_crud.js
-// Or copy-paste into mongosh / Compass Shell. Compass: connect to mongodb://localhost:27017
-db = db.getSiblingDB('fsdDB');
+const { MongoClient } = require('mongodb');
 
-// CREATE
-db.students.insertMany([
-  { student_id: 1, name: "Rohit Kumar", dept: "CSE", marks: 85 },
-  { student_id: 2, name: "Ananya Sharma", dept: "ISE", marks: 90 },
-  { student_id: 3, name: "Vikram Rao", dept: "CSE", marks: 78 }
-]);
+async function main() {
+  const client = new MongoClient('mongodb://localhost:27017');
+  await client.connect();
+  const col = client.db('fsdDB').collection('students');
 
-// READ all + filtered
-db.students.find();
-db.students.find({ dept: "CSE" });
+  // CREATE
+  await col.deleteMany({});
+  await col.insertMany([
+    { student_id: 1, name: "Rohit Kumar", dept: "CSE", marks: 85 },
+    { student_id: 2, name: "Ananya Sharma", dept: "ISE", marks: 90 },
+    { student_id: 3, name: "Vikram Rao", dept: "CSE", marks: 78 },
+  ]);
 
-// UPDATE
-db.students.updateOne({ student_id: 1 }, { $set: { marks: 92 } });
+  // READ all + filtered
+  console.log('All:', await col.find().toArray());
+  console.log('CSE:', await col.find({ dept: "CSE" }).toArray());
 
-// DELETE
-db.students.deleteOne({ student_id: 3 });
+  // UPDATE
+  await col.updateOne({ student_id: 1 }, { $set: { marks: 92 } });
 
-// VERIFY
-db.students.find();
+  // DELETE
+  await col.deleteOne({ student_id: 3 });
+
+  // VERIFY
+  console.log('Final:', await col.find().toArray());
+  await client.close();
+}
+
+main().catch(e => { console.error(e); process.exit(1); });

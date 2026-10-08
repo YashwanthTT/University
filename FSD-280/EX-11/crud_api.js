@@ -23,7 +23,7 @@ app.get('/students/:id', (req, res) => {
 app.post('/students', (req, res) => {
   // ponytail: max+1 instead of length+1 so ids stay unique after deletes
   const id = students.length ? Math.max(...students.map(s => s.id)) + 1 : 1;
-  const newStudent = { id, ...req.body };
+  const newStudent = { ...req.body, id };
   students.push(newStudent);
   res.status(201).json(newStudent);
 });
@@ -32,7 +32,7 @@ app.post('/students', (req, res) => {
 app.put('/students/:id', (req, res) => {
   const index = students.findIndex(s => s.id === parseInt(req.params.id));
   if (index === -1) return res.status(404).json({ message: 'Student not found' });
-  students[index] = { ...students[index], ...req.body };
+  students[index] = { ...students[index], ...req.body, id: students[index].id };
   res.status(200).json(students[index]);
 });
 
